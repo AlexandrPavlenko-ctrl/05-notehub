@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useDebouncedCallback } from 'use-debounce';
-import { fetchNotes, deleteNote, createNote } from '../../services/NoteService';
+import { fetchNotes, deleteNote, createNote } from '../../services/noteService';
 
 import { SearchBox } from '../SearchBox/SearchBox';
 import { Pagination } from '../Pagination/Pagination';

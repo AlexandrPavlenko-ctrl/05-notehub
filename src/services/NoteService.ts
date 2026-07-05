@@ -47,7 +47,7 @@ export const fetchNotes = async (
   const response: AxiosResponse<FetchNotesResponse> = await noteApiClient.get(
     "/notes",
     {
-      params: queryParams, // Передаем очищенный объект параметров
+      params: queryParams,
     },
   );
 

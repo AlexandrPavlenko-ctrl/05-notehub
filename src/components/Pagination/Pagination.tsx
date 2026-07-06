@@ -1,8 +1,15 @@
 import React from 'react';
-import ReactPaginateModule from 'react-paginate';
+import type { ComponentType } from "react";
+import ReactPaginateModule from "react-paginate";
+import type { ReactPaginateProps } from "react-paginate";
 import css from './Pagination.module.css';
 
-const ReactPaginate = (ReactPaginateModule as unknown as { default?: React.ComponentType<unknown> }).default ?? ReactPaginateModule;
+//  СТРОГИЙ БОЙЛЕРПЛЕЙТ ВІД МЕНТОРА ДЛЯ СУМІСНОСТІ З VITE 8.x.x
+type ModuleWithDefault<T> = { default: T };
+
+const ReactPaginate = (
+  ReactPaginateModule as unknown as ModuleWithDefault<ComponentType<ReactPaginateProps>>
+).default;
 
 interface PaginationProps {
   currentPage: number;
@@ -10,8 +17,13 @@ interface PaginationProps {
   onPageChange: (page: number) => void;
 }
 
-export const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPageChange }) => {
+export const Pagination: React.FC<PaginationProps> = ({
+  currentPage,
+  totalPages,
+  onPageChange,
+}) => {
   const handlePageClick = (selectedItem: { selected: number }) => {
+    // react-paginate використовує індексацію з 0, тому додаємо 1 для нашого стейту
     onPageChange(selectedItem.selected + 1);
   };
 
@@ -24,7 +36,10 @@ export const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages,
       marginPagesDisplayed={2}
       pageRangeDisplayed={3}
       onPageChange={handlePageClick}
+      // Передаємо поточну сторінку мінус 1 (оскільки індексація з нуля)
       forcePage={currentPage - 1}
+      
+      // Стилі з репозиторію CSS-модулів GoIT
       containerClassName={css.paginationContainer}
       pageClassName={css.pageItem}
       pageLinkClassName={css.pageLink}

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+// 🌟 ОБОВ'ЯЗКОВО додаємо keepPreviousData в імпорт
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { useDebouncedCallback } from 'use-debounce';
-import { fetchNotes, deleteNote, createNote } from '../../services/noteService';
+import { fetchNotes } from '../../services/noteService';
 
 import { SearchBox } from '../SearchBox/SearchBox';
 import { Pagination } from '../Pagination/Pagination';
@@ -12,64 +13,24 @@ import { NoteForm } from '../NoteForm/NoteForm';
 import css from './App.module.css';
 
 export const App: React.FC = () => {
-  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   
   const PER_PAGE = 12;
 
+  // 🌟 ОНОВЛЕНИЙ ЗАПИТ З БЕЗШОВНОЮ ПАГІНАЦІЄЮ
   const { data, isLoading, isError } = useQuery({
     queryKey: ['notes', page, search],
     queryFn: () => fetchNotes({ page, perPage: PER_PAGE, search }),
+    // 🌟 Цей рядок утримує старі нотатки на екрані, поки завантажуються дані для нової сторінки
+    placeholderData: keepPreviousData, 
   });
-
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => deleteNote(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notes'] });
-    },
-  });
-
- const createMutation = useMutation<unknown, unknown, { title: string; content: string; tag: string }>({
-  mutationFn: (payload) => createNote(payload),
-  onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ['notes'] });
-    setIsModalOpen(false);
-    setSearch('');
-    setPage(1);
-  },
-  onError: (error: unknown) => {
-    // ВЫВОДИМ ТОЧНЫЙ ОТВЕТ СЕРВЕРА С ОШИБКОЙ ВАЛИДАЦИИ
-    if (typeof error === 'object' && error && 'response' in error) {
-      const err = error as { response?: { data?: unknown } };
-      if (err.response && err.response.data) {
-        const respData = err.response.data;
-        console.error('❌ Бекенд отклонил запрос. Причина:', respData);
-        const message = (respData as { message?: unknown }).message ?? respData;
-        alert(`Ошибка сервера: ${JSON.stringify(message)}`);
-        return;
-      }
-    }
-    // Fallback
-    const fallbackMessage =
-      typeof error === 'object' && error !== null && 'message' in error
-        ? (error as { message?: unknown }).message
-        : error;
-    console.error('Ошибка:', fallbackMessage);
-  }
-});
 
   const debouncedSearch = useDebouncedCallback((value: string) => {
     setSearch(value.trim());
     setPage(1);
   }, 500);
-
-const handleFormSubmit = async (values: { title: string; content: string; tag: string }) => {
-  
-  await createMutation.mutateAsync(values);
-};
-
 
   const notesList = data?.notes || [];
   const totalPages = data?.totalPages || 1;
@@ -89,11 +50,13 @@ const handleFormSubmit = async (values: { title: string; content: string; tag: s
       </header>
 
       <main>
+        {/* loader показуємо тільки при першому завантаженні (isLoading), 
+            але при перемиканні сторінок користувач бачитиме попередні дані без мерехтіння */}
         {isLoading && <div className={css.status}>Синхронізація...</div>}
         {isError && <div className={css.error}>Помилка завантаження даних.</div>}
         
         {!isLoading && !isError && notesList.length > 0 && (
-          <NoteList notes={notesList} onDelete={(id) => deleteMutation.mutate(id)} />
+          <NoteList notes={notesList} />
         )}
 
         {!isLoading && !isError && notesList.length === 0 && (
@@ -102,7 +65,7 @@ const handleFormSubmit = async (values: { title: string; content: string; tag: s
       </main>
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-        <NoteForm onSubmit={handleFormSubmit} onCancel={() => setIsModalOpen(false)} />
+        <NoteForm onCancel={() => setIsModalOpen(false)} />
       </Modal>
     </div>
   );

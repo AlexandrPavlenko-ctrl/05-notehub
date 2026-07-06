@@ -19,8 +19,6 @@ export interface FetchNotesParams {
 
 export interface FetchNotesResponse {
   notes: Note[];
-  total: number;
-  page: number;
   totalPages: number;
 }
 
@@ -33,13 +31,11 @@ export interface CreateNotePayload {
 export const fetchNotes = async (
   params: FetchNotesParams,
 ): Promise<FetchNotesResponse> => {
-
   const queryParams: Record<string, string | number> = {
     page: params.page,
     perPage: params.perPage,
   };
 
-  
   if (params.search && params.search.trim() !== "") {
     queryParams.search = params.search.trim();
   }
@@ -63,7 +59,7 @@ export const createNote = async (payload: CreateNotePayload): Promise<Note> => {
 };
 
 export const deleteNote = async (id: string): Promise<{ id: string }> => {
-  const response: AxiosResponse<{ id: string }> = await noteApiClient.delete(
+  const response: AxiosResponse<Note> = await noteApiClient.delete(
     `/notes/${id}`,
   );
   return response.data;

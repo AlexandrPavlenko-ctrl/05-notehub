@@ -11,13 +11,28 @@ interface ModalProps {
 const modalRoot = document.getElementById('modal-root') || document.body;
 
 export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
+  
+  //  ЛОГІКА БЛОКУВАННЯ СКРОЛУ ТА ЗАКРИТТЯ ПО ESCAPE
   useEffect(() => {
     if (!isOpen) return;
+
+    // 1. Блокуємо скрол на body при відкритті модалки
+    const originalStyle = window.getComputedStyle(document.body).overflow;
+    document.body.style.overflow = 'hidden';
+
+    // 2. Обробник натискання клавіші Escape
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
+
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+
+    // 3. Функція очищення (Cleanup): спрацьовує при закритті або розмонтуванні модалки
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      // Повертаємо початковий стан скролу для body
+      document.body.style.overflow = originalStyle;
+    };
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;

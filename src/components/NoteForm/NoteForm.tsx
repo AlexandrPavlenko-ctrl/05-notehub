@@ -1,8 +1,9 @@
 import React from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { createNote } from '../../services/noteService';
 import css from './NoteForm.module.css';
-
 
 interface NoteFormValues {
   title: string;
@@ -11,10 +12,8 @@ interface NoteFormValues {
 }
 
 interface NoteFormProps {
-  onSubmit: (values: NoteFormValues) => Promise<void>;
-  onCancel: () => void;
+  onCancel: () => void; // Залишаємо тільки пропс для закриття модалки
 }
-
 
 const NoteSchema = Yup.object().shape({
   title: Yup.string()
@@ -28,7 +27,23 @@ const NoteSchema = Yup.object().shape({
     .required("Обов'язкове поле"),
 });
 
-export const NoteForm: React.FC<NoteFormProps> = ({ onSubmit, onCancel }) => {
+export const NoteForm: React.FC<NoteFormProps> = ({ onCancel }) => {
+  const queryClient = useQueryClient();
+
+  // 🌟 ПРЯМА ІНТЕГРАЦІЯ З TANSTACK QUERY ВСЕРЕДИНІ КОМПОНЕНТА
+  const createMutation = useMutation({
+    mutationFn: createNote,
+    onSuccess: () => {
+      // Автоматична інвалідація списку нотаток безпосередньо тут
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
+      onCancel(); // Закриваємо модальне вікно після успіху
+    },
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : 'Не вдалося створити нотатку';
+      alert(`Помилка сервера: ${message}`);
+    },
+  });
+
   const initialValues: NoteFormValues = {
     title: '',
     content: '',
@@ -41,40 +56,34 @@ export const NoteForm: React.FC<NoteFormProps> = ({ onSubmit, onCancel }) => {
       validationSchema={NoteSchema}
       onSubmit={async (values, { setSubmitting, resetForm }) => {
         try {
-          
-          await onSubmit(values);
-          resetForm(); 
+          // Викликаємо мутацію прямо з Formik
+          await createMutation.mutateAsync({
+            title: values.title.trim(),
+            content: values.content.trim(),
+            tag: values.tag,
+          });
+          resetForm();
         } catch (error) {
-          console.error('Помилка при збереженні нотатки:', error);
+          console.error(error);
         } finally {
-          
-          setSubmitting(false); 
+          setSubmitting(false);
         }
       }}
     >
       {({ isSubmitting, errors }) => (
         <Form className={css.form}>
-          {/* Поле Title */}
           <div className={css.formGroup}>
             <label htmlFor="title">Title</label>
             <Field id="title" type="text" name="title" className={css.input} />
             <ErrorMessage name="title" component="span" className={css.error} />
           </div>
 
-          {/* Поле Content */}
           <div className={css.formGroup}>
             <label htmlFor="content">Content</label>
-            <Field
-              id="content"
-              name="content" // Чистое имя content, как требует бэкенд
-              as="textarea"
-              rows={8}
-              className={css.textarea}
-            />
+            <Field id="content" name="content" as="textarea" rows={8} className={css.textarea} />
             <ErrorMessage name="content" component="span" className={css.error} />
           </div>
 
-          {/* Поле Tag */}
           <div className={css.formGroup}>
             <label htmlFor="tag">Tag</label>
             <Field id="tag" name="tag" as="select" className={css.select}>
@@ -87,10 +96,9 @@ export const NoteForm: React.FC<NoteFormProps> = ({ onSubmit, onCancel }) => {
             <ErrorMessage name="tag" component="span" className={css.error} />
           </div>
 
-          {/* Визуальный индикатор ошибок Yup, если кнопка не нажимается */}
           {Object.keys(errors).length > 0 && (
             <div style={{ color: '#ef4444', fontSize: '0.9rem', marginBottom: '1rem' }}>
-              Форма містить помилки валидації. Перевірте поля.
+              Форма містить помилки валідації. Перевірте поля.
             </div>
           )}
 
@@ -101,9 +109,9 @@ export const NoteForm: React.FC<NoteFormProps> = ({ onSubmit, onCancel }) => {
             <button
               type="submit"
               className={css.submitButton}
-              disabled={isSubmitting} // Защита от двойного клика, отключается в finally
+              disabled={isSubmitting || createMutation.isPending}
             >
-              {isSubmitting ? 'Creating...' : 'Create note'}
+              {isSubmitting || createMutation.isPending ? 'Creating...' : 'Create note'}
             </button>
           </div>
         </Form>

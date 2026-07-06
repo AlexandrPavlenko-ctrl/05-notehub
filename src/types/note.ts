@@ -7,8 +7,8 @@ export interface NoteTag {
 export interface Note {
   id: string;
   title: string;
-  content: string; // Використовуємо content замість колишнього text
-  tag: string; // Використовуємо одинарний рядок tag замість колишнього масиву tags
+  content: string;
+  tag: string;
   createdAt: string;
   updatedAt: string;
 }

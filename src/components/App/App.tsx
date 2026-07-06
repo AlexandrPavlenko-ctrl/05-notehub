@@ -66,7 +66,7 @@ export const App: React.FC = () => {
   }, 500);
 
 const handleFormSubmit = async (values: { title: string; content: string; tag: string }) => {
-  // Отправляем СТРОГО то, что собрал Formik: { title, content, tag }
+  
   await createMutation.mutateAsync(values);
 };
 

@@ -3,7 +3,7 @@ import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import css from './NoteForm.module.css';
 
-// Интерфейс полностью соответствует схеме бэкенда
+
 interface NoteFormValues {
   title: string;
   content: string;
@@ -15,7 +15,7 @@ interface NoteFormProps {
   onCancel: () => void;
 }
 
-// Валидация Yup по вашим именам полей
+
 const NoteSchema = Yup.object().shape({
   title: Yup.string()
     .min(3, 'Мінімум 3 символи')
@@ -41,13 +41,13 @@ export const NoteForm: React.FC<NoteFormProps> = ({ onSubmit, onCancel }) => {
       validationSchema={NoteSchema}
       onSubmit={async (values, { setSubmitting, resetForm }) => {
         try {
-          // Передаем чистые значения (title, content, tag) в App.tsx
+          
           await onSubmit(values);
           resetForm(); 
         } catch (error) {
           console.error('Помилка при збереженні нотатки:', error);
         } finally {
-          // Принудительно разблокируем кнопку после ответа (успех или ошибка)
+          
           setSubmitting(false); 
         }
       }}

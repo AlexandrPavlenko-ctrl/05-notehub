@@ -33,13 +33,13 @@ export interface CreateNotePayload {
 export const fetchNotes = async (
   params: FetchNotesParams,
 ): Promise<FetchNotesResponse> => {
-  // Создаем чистый объект для параметров
+
   const queryParams: Record<string, string | number> = {
     page: params.page,
     perPage: params.perPage,
   };
 
-  // Добавляем параметр поиска ТОЛЬКО если пользователь действительно что-то ввел
+  
   if (params.search && params.search.trim() !== "") {
     queryParams.search = params.search.trim();
   }
